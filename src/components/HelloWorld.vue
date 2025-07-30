@@ -1,58 +1,171 @@
 <template>
-  <div class="hello">
-    <h1>{{ msg }}</h1>
-    <p>
-      For a guide and recipes on how to configure / customize this project,<br>
-      check out the
-      <a href="https://cli.vuejs.org" target="_blank" rel="noopener">vue-cli documentation</a>.
-    </p>
-    <h3>Installed CLI Plugins</h3>
-    <ul>
-      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-babel" target="_blank" rel="noopener">babel</a></li>
-      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-eslint" target="_blank" rel="noopener">eslint</a></li>
-    </ul>
-    <h3>Essential Links</h3>
-    <ul>
-      <li><a href="https://vuejs.org" target="_blank" rel="noopener">Core Docs</a></li>
-      <li><a href="https://forum.vuejs.org" target="_blank" rel="noopener">Forum</a></li>
-      <li><a href="https://chat.vuejs.org" target="_blank" rel="noopener">Community Chat</a></li>
-      <li><a href="https://twitter.com/vuejs" target="_blank" rel="noopener">Twitter</a></li>
-      <li><a href="https://news.vuejs.org" target="_blank" rel="noopener">News</a></li>
-    </ul>
-    <h3>Ecosystem</h3>
-    <ul>
-      <li><a href="https://router.vuejs.org" target="_blank" rel="noopener">vue-router</a></li>
-      <li><a href="https://vuex.vuejs.org" target="_blank" rel="noopener">vuex</a></li>
-      <li><a href="https://github.com/vuejs/vue-devtools#vue-devtools" target="_blank" rel="noopener">vue-devtools</a></li>
-      <li><a href="https://vue-loader.vuejs.org" target="_blank" rel="noopener">vue-loader</a></li>
-      <li><a href="https://github.com/vuejs/awesome-vue" target="_blank" rel="noopener">awesome-vue</a></li>
-    </ul>
+  <div class="calculator">
+    <div class="display">{{ display }}</div>
+    <div class="buttons-grid">
+      <button v-for="(btn, i) in buttons" :key="i" @click="onButtonClick(btn)" :class="btn.class">{{ btn.label
+        }}</button>
+    </div>
   </div>
 </template>
 
 <script>
 export default {
   name: 'HelloWorld',
-  props: {
-    msg: String
+  data() {
+    return {
+      display: '0',
+      buttons: [
+        { label: '7' },
+        { label: '8' },
+        { label: '9' },
+        { label: '+', class: 'op' },
+        { label: '4' },
+        { label: '5' },
+        { label: '6' },
+        { label: '-', class: 'op' },
+        { label: '1' },
+        { label: '2' },
+        { label: '3' },
+        { label: '×', class: 'op' },
+        { label: '0' },
+        { label: '.' },
+        { label: 'C', class: 'ctrl' },
+        { label: '÷', class: 'op' },
+        { label: '=', class: 'equal' }
+      ],
+      previous: '',
+      operator: null,
+      waitingForOperand: false
+    }
+  },
+  methods: {
+    onButtonClick(btn) {
+      const val = btn.label;
+      if (!isNaN(val) || val === '.') {
+        this.appendNumber(val);
+      } else if (['+', '-', '×', '÷'].includes(val)) {
+        this.chooseOperator(val);
+      } else if (val === 'C') {
+        this.clear();
+      } else if (val === '=') {
+        this.calculate();
+      }
+    },
+    appendNumber(num) {
+      if (this.waitingForOperand) {
+        this.display = num === '.' ? '0.' : num;
+        this.waitingForOperand = false;
+      } else if (this.display === '0' && num !== '.') {
+        this.display = num;
+      } else if (num === '.' && this.display.includes('.')) {
+        return;
+      } else {
+        this.display += num;
+      }
+    },
+    chooseOperator(op) {
+      if (this.operator && !this.waitingForOperand) {
+        this.calculate();
+      }
+      this.operator = op;
+      this.previous = this.display;
+      this.waitingForOperand = true;
+    },
+    clear() {
+      this.display = '0';
+      this.previous = '';
+      this.operator = null;
+      this.waitingForOperand = false;
+    },
+    calculate() {
+      let result = 0;
+      const prev = parseFloat(this.previous);
+      const curr = parseFloat(this.display);
+      if (isNaN(prev) || isNaN(curr) || !this.operator) return;
+      switch (this.operator) {
+        case '+':
+          result = prev + curr;
+          break;
+        case '-':
+          result = prev - curr;
+          break;
+        case '×':
+          result = prev * curr;
+          break;
+        case '÷':
+          result = curr === 0 ? '错误' : prev / curr;
+          break;
+        default:
+          return;
+      }
+      this.display = String(result);
+      this.previous = '';
+      this.operator = null;
+      this.waitingForOperand = false;
+    }
   }
 }
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-h3 {
-  margin: 40px 0 0;
+.calculator {
+  width: 280px;
+  margin: 40px auto;
+  padding: 20px;
+  background: #e6f9ec;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(66, 185, 131, 0.1);
 }
-ul {
-  list-style-type: none;
-  padding: 0;
+
+.display {
+  background: #d0f5e2;
+  color: #2e7d4f;
+  font-size: 2em;
+  text-align: right;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  min-height: 40px;
+  letter-spacing: 1px;
 }
-li {
-  display: inline-block;
-  margin: 0 10px;
+
+.buttons-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
 }
-a {
-  color: #42b983;
+
+button {
+  padding: 18px 0;
+  font-size: 1.1em;
+  border: none;
+  border-radius: 6px;
+  background: #b2e9c7;
+  color: #2e7d4f;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+button.op {
+  background: #a0e0bb;
+  color: #1b5e20;
+  font-weight: bold;
+}
+
+button.ctrl {
+  background: #e0f7fa;
+  color: #00897b;
+}
+
+button.equal {
+  grid-column: span 4;
+  background: #42b983;
+  color: #fff;
+  font-weight: bold;
+  font-size: 1.2em;
+}
+
+button:hover {
+  background: #a0e0bb;
 }
 </style>
